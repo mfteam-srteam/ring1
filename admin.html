@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Пульт управления Live-трансляцией</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background-color: #1e1e24;
+            color: #f5f5f7;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+        .admin-box {
+            background-color: #2a2a35;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+            width: 100%;
+            max-width: 500px;
+            box-sizing: border-box;
+        }
+        h2 {
+            text-align: center;
+            margin-top: 0;
+            color: #ffd700;
+            text-transform: uppercase;
+            font-size: 22px;
+            letter-spacing: 1px;
+        }
+        .form-group {
+            margin-bottom: 18px;
+        }
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 14px;
+            color: #b0b0bc;
+            font-weight: 600;
+        }
+        /* Стили для объединения кнопок и инпутов */
+        .controls-row {
+            display: flex;
+            gap: 8px;
+        }
+        .btn-counter {
+            background-color: #1e1e24;
+            color: #ffd700;
+            border: 1px solid #444456;
+            padding: 0 16px;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: border-color 0.2s, background-color 0.2s;
+        }
+        .btn-counter:hover {
+            border-color: #ffd700;
+            background-color: #252530;
+        }
+        .btn-counter:active {
+            transform: scale(0.95);
+        }
+        input[type="text"] {
+            flex: 1;
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid #444456;
+            background-color: #1e1e24;
+            color: white;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        input[type="text"]:focus {
+            border-color: #ffd700;
+            outline: none;
+        }
+        .btn-save {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(to bottom, #ffd700, #cca100);
+            border: none;
+            border-radius: 6px;
+            color: #000;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: transform 0.1s;
+        }
+        .btn-save:active {
+            transform: scale(0.98);
+        }
+        .status-msg {
+            text-align: center;
+            margin-top: 15px;
+            font-size: 14px;
+            font-weight: bold;
+            display: none;
+        }
+    </style>
+    <!-- Firebase scripts -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+</head>
+<body>
+
+<div class="admin-box">
+    <h2>Пульт Эфира Live</h2>
+    
+    <div class="form-group">
+        <label for="tournament_title">Название турнира</label>
+        <input type="text" id="tournament_title" value="Открытый ринг Moscow fight team">
+    </div>
+    
+    <div class="form-group">
+        <label for="round_num">Раунд / Статус</label>
+        <div class="controls-row">
+            <button class="btn-counter" onclick="modifyCounter('round_num', -1, 'РАУНД ')">−1</button>
+            <input type="text" id="round_num" value="РАУНД 1">
+            <button class="btn-counter" onclick="modifyCounter('round_num', 1, 'РАУНД ')">+1</button>
+        </div>
+    </div>
+    
+    <div class="form-group">
+        <label for="pair_num">Номер пары</label>
+        <div class="controls-row">
+            <button class="btn-counter" onclick="modifyCounter('pair_num', -1, 'ПАРА №')">−1</button>
+            <input type="text" id="pair_num" value="ПАРА №1">
+            <button class="btn-counter" onclick="modifyCounter('pair_num', 1, 'ПАРА №')">+1</button>
+        </div>
+    </div>
+    
+    <div class="form-group">
+        <label for="red_name">Красный угол (Слева)</label>
+        <input type="text" id="red_name" value="Иванов Иван">
+    </div>
+    
+    <div class="form-group">
+        <label for="blue_name">Синий угол (Справа)</label>
+        <input type="text" id="blue_name" value="Петров Петр">
+    </div>
+    
+    <div class="form-group">
+        <label for="logo_url">Ссылка на Логотип (Если нужно)</label>
+        <input type="text" id="logo_url" value="https://freeimage.host/i/nUmD0Xf">
+    </div>
+    
+    <button class="btn-save" onclick="saveData()">Обновить титры</button>
+    
+    <div class="status-msg" id="status">Данные обновлены!</div>
+</div>
+
+<script>
+    // Конфигурация Firebase
+    const firebaseConfig = {
+        databaseURL: 'https://mfteam-default-rtdb.firebaseio.com/'
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database().ref('live_graphics');
+
+    // Автоматическая загрузка текущих данных при открытии пульта
+    db.once('value').then((snapshot) => {
+        const data = snapshot.val();
+        if (data) {
+            if (data.tournament_title) document.getElementById('tournament_title').value = data.tournament_title;
+            if (data.round_num) document.getElementById('round_num').value = data.round_num;
+            if (data.pair_num) document.getElementById('pair_num').value = data.pair_num;
+            if (data.red_name) document.getElementById('red_name').value = data.red_name;
+            if (data.blue_name) document.getElementById('blue_name').value = data.blue_name;
+            if (data.logo_url) document.getElementById('logo_url').value = data.logo_url;
+        }
+    });
+
+    // Умная функция инкремента/декремента числовых значений
+    function modifyCounter(elementId, step, labelPrefix) {
+        const field = document.getElementById(elementId);
+        let digits = parseInt(field.value.replace(/\D/g, ''));
+        if (isNaN(digits)) digits = 1;
+        
+        let updatedValue = digits + step;
+        if (updatedValue < 1) updatedValue = 1;
+        
+        field.value = labelPrefix + updatedValue;
+        
+        // Автоматически сохраняем измененный счетчик, не заставляя кликать на основную кнопку
+        saveData();
+    }
+
+    // Функция отправки изменений в базу (заменена на .update для надежности соединения)
+    function saveData() {
+        const tournament_title = document.getElementById('tournament_title').value;
+        const round_num = document.getElementById('round_num').value;
+        const pair_num = document.getElementById('pair_num').value;
+        const red_name = document.getElementById('red_name').value;
+        const blue_name = document.getElementById('blue_name').value;
+        const logo_url = document.getElementById('logo_url').value;
+
+        return db.update({
+            tournament_title: tournament_title,
+            round_num: round_num,
+            pair_num: pair_num,
+            red_name: red_name,
+            blue_name: blue_name,
+            logo_url: logo_url
+        }).then(() => {
+            const status = document.getElementById('status');
+            status.style.color = '#ffd700';
+            status.style.display = 'block';
+            setTimeout(() => { status.style.display = 'none'; }, 2000);
+        }).catch((err) => {
+            alert('Ошибка сохранения: ' + err.message);
+        });
+    }
+</script>
+
+</body>
+</html>
