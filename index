@@ -1,0 +1,121 @@
+/* Главный контейнер графики - теперь привязан К НИЗУ виджета */
+        .graphics-wrapper {
+            position: absolute; 
+            bottom: 10px; 
+            bottom: 15px; 
+            left: 50%;
+            transform: translateX(-50%); 
+            display: flex; flex-direction: column; align-items: center;
+            width: 95%; 
+            max-width: 1200px;
+        }
+        /* Верхняя плашка с названием турнира */
+        .tournament-bar {
+            background: rgba(17, 17, 17, 0.95); 
+            width: 100%; text-align: center;
+            padding: 6px 0; font-size: 16px; color: #dddddd;
+            text-transform: uppercase; letter-spacing: 3px;
+            border-bottom: 2px solid #252525;
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.6);
+            border-top-left-radius: 8px; border-top-right-radius: 8px;
+            box-sizing: border-box;
+        }
+        /* Блок по центру, объединяющий раунд и пару */
+        .center-block {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+        }
+        /* Плашка Раунда */
+        /* Плашка Раунда — вынесена наверх, больше не обрезается */
+        .round-bar {
+            background: #000000;
+            color: #ffffff;
+            font-size: 20px; 
+            padding: 3px 20px;
+            padding: 4px 20px;
+            letter-spacing: 2px;
+            border-top-left-radius: 5px;
+            border-top-right-radius: 5px;
+            border: 2px solid #252525;
+            border-bottom: none;
+            min-width: 90px;
+            text-align: center;
+            margin-bottom: -1px; 
+            z-index: 10;
+        }
+        /* Основная линия с бойцами */
+@@ -59,9 +47,9 @@
+            width: 100%;
+            align-items: flex-end; 
+            background: #1a1a1a; 
+            border-bottom-left-radius: 8px; border-bottom-right-radius: 8px;
+            border-top-left-radius: 8px; border-top-right-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.9);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            box-sizing: border-box;
+        }
+        .badge { 
+@@ -83,6 +71,7 @@
+            z-index: 5; 
+            border-left: 2px solid rgba(0,0,0,0.3);
+            border-right: 2px solid rgba(0,0,0,0.3);
+            height: 60px;
+        }
+        /* Красный угол */
+        .red-corner { 
+@@ -102,6 +91,18 @@
+        }
+        /* Логотип клуба */
+        .club-logo { width: 42px; height: 42px; object-fit: contain; border-radius: 50%; }
+
+        /* Нижняя плашка с названием турнира */
+        .tournament-bar {
+            background: rgba(17, 17, 17, 0.95); 
+            width: 100%; text-align: center;
+            padding: 6px 0; font-size: 16px; color: #dddddd;
+            text-transform: uppercase; letter-spacing: 3px;
+            border-top: 2px solid #252525;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.6);
+            border-bottom-left-radius: 8px; border-bottom-right-radius: 8px;
+            box-sizing: border-box;
+        }
+    </style>
+    <!-- Подключаем официальную библиотеку связи Google Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+@@ -110,25 +111,27 @@
+<body>
+
+    <div class="graphics-wrapper">
+        <div class="tournament-bar" id="tournament">ТУРНИР</div>
+        <!-- Раунд теперь аккуратно отображается сверху -->
+        <div class="round-bar" id="round">РАУНД 1</div>
+        
+        <div class="main-bar">
+            <div class="badge red-corner">
+                <span id="red">БОЕЦ КРАСНЫЙ</span>
+                <img src="" class="club-logo" id="red-logo" style="display:none;">
+            </div>
+            <div class="center-block">
+                <div class="round-bar" id="round">РАУНД 1</div>
+                <div class="badge pair-num" id="pair">ПАРА №1</div>
+            </div>
+            <div class="pair-num" id="pair">ПАРА №1</div>
+            <div class="badge blue-corner">
+                <img src="" class="club-logo" id="blue-logo" style="display:none;">
+                <span id="blue">БОЕЦ СИНИЙ</span>
+            </div>
+        </div>
+
+        <!-- Название турнира гармонично закрывает плашку снизу -->
+        <div class="tournament-bar" id="tournament">ТУРНИР</div>
+    </div>
+
+    <script>
+        // Подключаем вашу мгновенную базу данных
+        // ИСПРАВЛЕНО: Синхронизировано с базой данных пульта управления
+        const firebaseConfig = {
+            databaseURL: 'https://mfteam-default-rtdb.firebaseio.com/'
+        };
